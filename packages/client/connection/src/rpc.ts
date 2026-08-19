@@ -52,10 +52,30 @@ export interface HostConnectionRpc {
   ): () => Promise<void>
 }
 
+/**
+ * Fetch-shaped handler used by Host Connection and the desktop protocol.
+ * Identical to the HTTP bridge's handler; declared here so the client bundle
+ * does not import the node:http bridge.
+ */
+export interface ConnectionFetchHandler {
+  /**
+   * Handle one standard Fetch request.
+   * @param request - request produced by the active transport.
+   * @returns complete or streaming Fetch response.
+   */
+  fetch(request: Request): Promise<Response>
+}
+
 /** Host `ctx.connection` shape consumed by transport-independent adapters. */
 export interface HostConnectionHandle {
   /** Generic RPC channel registry. */
   readonly rpc: HostConnectionRpc
+  /**
+   * Shared `/api` Fetch handler: Typert interceptors then the API Proxy
+   * fallback. The HTTP carrier and the Electron custom protocol both dispatch
+   * through this one function.
+   */
+  readonly apiFetch: ConnectionFetchHandler
 }
 
 /** Client caller for logical RPC channels carried by the current transport. */

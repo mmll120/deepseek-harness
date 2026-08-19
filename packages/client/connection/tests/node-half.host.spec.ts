@@ -492,4 +492,44 @@ describe('connection node half over a real HTTP server', () => {
       await dispose()
     }
   })
+
+  it('provides apiFetch without a webServer and skips HTTP routes', async () => {
+    const ctx = new Context()
+    ctx.provide('apiProxy', {
+      events: {
+        mux: async function* () {},
+        host: async function* () {},
+      },
+    } as unknown as ApiProxy)
+    const fiber = ctx.plugin({ inject: [...inject], apply })
+    await fiber.await()
+    const connection = ctx.get('connection') as HostConnectionHandle
+    expect(connection.apiFetch).toBeDefined()
+    const response = await connection.apiFetch.fetch(new Request('http://127.0.0.1/api/session.list', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        type: 'client-request',
+        rpcId: 'desktop-list',
+        method: 'session.list',
+        payload: {},
+      }),
+    }))
+    // Empty apiProxy object has no sessions.list — handler crash is 500, not a missing route.
+    expect(response.status).toBe(500)
+    const mux = await connection.apiFetch.fetch(new Request('http://127.0.0.1/api/events.mux'))
+    expect(mux.status).not.toBe(426)
+    const privileged = await connection.apiFetch.fetch(new Request('http://evil.example/api/host.pickDirectory', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        type: 'client-request',
+        rpcId: 'desktop-pick',
+        method: 'host.pickDirectory',
+        payload: {},
+      }),
+    }))
+    expect(privileged.status).toBe(403)
+    await fiber.dispose()
+  })
 })

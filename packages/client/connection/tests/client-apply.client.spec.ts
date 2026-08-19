@@ -7,10 +7,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apply, type ConnectionHandle } from '../src/client/index.ts'
 import type { RpcMessage } from '../src/client/api.ts'
 import { RpcId } from '../src/client/api.ts'
+import { ElectronApiClient } from '../src/client/electron-api-client.ts'
 import { FixtureApiClient } from '../src/client/fixture.ts'
 import { WebApiClient } from '../src/client/web-api-client.ts'
 
-type Win = { location?: { hostname: string; search: string; origin?: string } }
+type Win = { location?: { hostname: string; search: string; origin?: string; protocol?: string } }
 type WebSocketGlobal = { WebSocket?: typeof WebSocket }
 
 const originalWebSocket = globalThis.WebSocket
@@ -76,6 +77,15 @@ describe('connection client apply', () => {
     delete (globalThis as Win).location
     const handle = await mount()
     expect(handle.api).toBeInstanceOf(WebApiClient)
+    expect(handle.isLoopback).toBe(true)
+  })
+
+  it('selects the Electron carrier on the privileged dsh: origin', async () => {
+    ;(globalThis as Win).location = {
+      hostname: 'app', search: '', protocol: 'dsh:', origin: 'dsh://app',
+    }
+    const handle = await mount()
+    expect(handle.api).toBeInstanceOf(ElectronApiClient)
     expect(handle.isLoopback).toBe(true)
   })
 

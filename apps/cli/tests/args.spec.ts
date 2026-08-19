@@ -26,6 +26,9 @@ describe('parseDshArgs', () => {
     expect(parse(['--profile', 'tui', '--patch', 'a.yml', '--patch', 'b.yml']))
       .toEqual({ mode: 'profile', profile: 'tui', patches: ['a.yml', 'b.yml'], args: [] })
     expect(parse(['web'])).toEqual({ mode: 'profile', profile: 'web', patches: [], args: [] })
+    expect(parse(['desktop'])).toEqual({ mode: 'profile', profile: 'desktop', patches: [], args: [] })
+    expect(parse(['desktop', '--smoke']))
+      .toEqual({ mode: 'profile', profile: 'desktop', patches: [], args: ['--smoke'] })
     expect(parse(['web', '--patch', 'web.yml']))
       .toEqual({ mode: 'profile', profile: 'web', patches: ['web.yml'], args: [] })
   })
@@ -68,6 +71,10 @@ describe('parseDshArgs', () => {
       .toEqual({ mode: 'dump-config', profile: 'web', defaultOnly: false, patches: [] })
     expect(parse(['web', '--dump-default-config']))
       .toEqual({ mode: 'dump-config', profile: 'web', defaultOnly: true, patches: [] })
+    expect(parse(['desktop', '--dump-config']))
+      .toEqual({ mode: 'dump-config', profile: 'desktop', defaultOnly: false, patches: [] })
+    expect(parse(['desktop', '--dump-default-config']))
+      .toEqual({ mode: 'dump-config', profile: 'desktop', defaultOnly: true, patches: [] })
   })
 
   it('rejects missing profile, removed flags, and contradictory inputs', () => {

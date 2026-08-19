@@ -29,6 +29,7 @@ declare module '@deepseek-ai/cordis' {
 }
 
 export {
+  collectInstallFallbackLinks,
   composeEntries,
   DEFAULT_PROFILE_BUNDLES,
   healProfilesModuleFallback,
@@ -41,6 +42,7 @@ export {
   resolveBundleDir,
   resolveProfileDir,
   writeProfileManifest,
+  type CollectInstallFallbackOptions,
   type DshBundleManifest,
   type DshManifestSection,
   type DshProfileManifest,
@@ -678,6 +680,28 @@ function formatActivationError(error: unknown): string {
 }
 
 /**
+ * Plugin-thrown stacks the Loader wraps in `.cause` or, when several entries
+ * fail in one group update, AggregateError `.errors`. A cause-only walk drops
+ * every plugin's own error because AggregateError does not set `.cause`.
+ * @param error - a thrown value from mount or activation.
+ * @param skip - the outer wrap whose own stack is already in the diagnostic prefix.
+ * @returns inner stacks in encounter order; empty when `error` is `skip` with no inner errors.
+ */
+function diagnosticStacks(error: unknown, skip: unknown): string[] {
+  if (error instanceof AggregateError && error.errors.length > 0) {
+    return error.errors.flatMap(inner => diagnosticStacks(inner, skip))
+  }
+  if (error instanceof Error && error.cause !== undefined) {
+    const inner = diagnosticStacks(error.cause, skip)
+    if (inner.length > 0) return inner
+  }
+  if (error instanceof Error && error !== skip) {
+    return [error.stack ?? error.message]
+  }
+  return []
+}
+
+/**
  * Reject a settled Loader tree when an enabled entry failed or remains inactive.
  * Plugin failures include the original thrown stack; pending entries name their
  * unresolved services because no plugin error exists for that state. Active
@@ -790,13 +814,10 @@ export async function boot(
     await ctx.fiber.dispose()
     const detail = cause instanceof Error ? cause.message : String(cause)
     // The transactional Loader wraps a failing entry apply in one message per
-    // tree layer; every layer's message is folded into `detail` above, and the
-    // deepest cause is the plugin's own thrown error, whose stack names the
-    // real failure site — append it so the startup diagnostic preserves the
-    // original activation error instead of only the wrap chain.
-    let deepest: unknown = cause
-    while (deepest instanceof Error && deepest.cause !== undefined) deepest = deepest.cause
-    const stack = deepest instanceof Error && deepest !== cause ? `\n${deepest.stack ?? deepest.message}` : ''
+    // tree layer; every layer's message is folded into `detail` above. Inner
+    // plugin stacks live on `.cause` or AggregateError `.errors`.
+    const stacks = diagnosticStacks(cause, cause)
+    const stack = stacks.length > 0 ? `\n${stacks.join('\n')}` : ''
     throw new Error(`${binName}: ${stage}: ${detail}${stack}`, { cause })
   }
 }

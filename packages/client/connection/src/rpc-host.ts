@@ -15,6 +15,7 @@ import { bridge, type FetchHandler } from './http-bridge.ts'
 import { isTrustedApiRequest } from './api-request-trust.ts'
 import { API_PATH } from './api-path.ts'
 import type {
+  ConnectionFetchHandler,
   ConnectionRpcEndpointMatcher,
   ConnectionRpcHandler,
   ConnectionRpcHandlerOptions,
@@ -42,6 +43,13 @@ declare module '@deepseek-ai/cordis' {
 /** Host Connection service whose channel registrations belong to the caller fiber. */
 export class HostConnectionService extends Service implements HostConnectionHandle {
   private readonly interceptors = new Map<string, ConnectionRpcInterceptor>()
+  /**
+   * Shared `/api` Fetch handler. The Connection plugin overwrites this during
+   * apply once interceptors and the API Proxy fallback are composed.
+   */
+  apiFetch: ConnectionFetchHandler = {
+    fetch: () => Promise.resolve(new Response('not found', { status: 404 })),
+  }
 
   /**
    * Provide the Host half over the active HTTP server.
@@ -108,10 +116,11 @@ export class HostConnectionService extends Service implements HostConnectionHand
         await bridge(req, res, fetchHandler)
       },
     }
-    return owner.effect(
-      () => owner.webServer.register(route),
-      `client-connection: ${channel} rpc channel`,
-    )
+    return owner.effect(() => {
+      const webServer = owner.get('webServer')
+      if (webServer === undefined) return () => {}
+      return webServer.register(route)
+    }, `client-connection: ${channel} rpc channel`)
   }
 
   private registerInterceptor(

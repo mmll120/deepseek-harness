@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-08-20-token-frugal-branch-merge-workflow.md
+2026-08-20-token-frugal-branch-merge-workflow.md: 62196ec61f5ffd9604d0294f536d565b609ad48c
+2026-08-20-token-frugal-branch-merge-workflow.zh.md: 1dceab46037f318989cfc320a9740b8bfcdd5fab

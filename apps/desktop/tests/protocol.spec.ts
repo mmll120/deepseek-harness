@@ -6,9 +6,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   handleDesktopProtocol,
-  injectDesktopBootManifest,
   rewriteToLoopback,
-  type DesktopBootGraph,
   type DesktopProtocolDeps,
 } from '../src/protocol.ts'
 
@@ -29,7 +27,6 @@ function stage(): { distRoot: string; distIndex: string; plugin: string; deps: D
   const plugin = join(root, 'client.js')
   writeFileSync(plugin, 'window.__ModuleLoader__.load({id:"x",factory(){}})\n')
   writeFileSync(`${plugin}.map`, '{"version":3}\n')
-  const graph: DesktopBootGraph = { rev: 'abc', entries: [{ id: '@fixture/ui', url: '/plugins/@fixture/ui/client.js?rev=1', rev: '1' }] }
   const seen: string[] = []
   const deps: DesktopProtocolDeps = {
     apiFetch: {
@@ -42,7 +39,10 @@ function stage(): { distRoot: string; distIndex: string; plugin: string; deps: D
       },
     },
     clientPath: id => id === '@fixture/ui' ? plugin : undefined,
-    graph: () => graph,
+    injectBootManifest: html => html.replace(
+      '<head>',
+      '<head><script>window.__ModuleLoader__ = {}; window.__DSH_BOOT__ = {"entries":["@fixture/ui"]}</script>',
+    ),
     distIndex,
     distRoot,
   }
@@ -97,15 +97,14 @@ describe('handleDesktopProtocol', () => {
     expect(odd.status).toBe(404)
   })
 
-  it('injects the boot graph into index.html and serves dist files', async () => {
+  it('serves the client-modules boot transform and dist files', async () => {
     const { deps } = stage()
     const index = await handleDesktopProtocol(new Request('dsh://app/'), deps)
     expect(index.status).toBe(200)
     const html = await index.text()
+    expect(html).toContain('window.__ModuleLoader__')
     expect(html).toContain('window.__DSH_BOOT__')
     expect(html).toContain('@fixture/ui')
-    expect(html).toBe(injectDesktopBootManifest('<head></head><body>shell</body>', deps.graph()))
-    expect(injectDesktopBootManifest('<head></head>', { rev: '<img>', entries: [] })).toContain('\\u003cimg>')
     const asset = await handleDesktopProtocol(new Request('dsh://app/app.js'), deps)
     expect(asset.status).toBe(200)
     expect(await asset.text()).toContain('__shell')
@@ -124,11 +123,6 @@ describe('handleDesktopProtocol', () => {
     const head = await handleDesktopProtocol(new Request('dsh://app/', { method: 'HEAD' }), deps)
     expect(head.status).toBe(200)
     expect(await head.text()).toBe('')
-  })
-
-  it('prepends the boot script when index.html has no head element', () => {
-    expect(injectDesktopBootManifest('<body>x</body>', { rev: '1', entries: [] }))
-      .toBe('<script>window.__DSH_BOOT__ = {"rev":"1","entries":[]}</script><body>x</body>')
   })
 
   it('returns 404 when a registered plugin file is unreadable', async () => {

@@ -10,9 +10,9 @@ Status: implemented
 
 ## Decision
 
-桌面应用是与 Web、headless 并列的第三种应用组装：[`apps/desktop`](../../../../apps/desktop/README.md) 加上 [`dsh-desktop-app`](../../../../packages/bundle/desktop-app/README.md)。主进程启动 `desktop` profile（`dsh-base` + `dsh-desktop-app`），在不挂载 webserver 的情况下拿到 `connection.apiFetch`。渲染进程在 `dsh://app/` 加载现有 Web GUI，且 `nodeIntegration: false`、`contextIsolation: true`。组合包钉住 [`directory-picker-native`](../../../../packages/host/directory-picker-native/README.md) 及其客户端表层；自适应选择器会注入 `webServer` 以采样绑定主机，因此只适用于 Web。
+桌面应用是与 Web、headless 并列的第三种应用组装：[`apps/desktop`](../../../../apps/desktop/README.md) 加上 [`dsh-desktop-app`](../../../../packages/bundle/desktop-app/README.md)。主进程启动 `desktop` profile（`dsh-base` + `dsh-desktop-app`），在不挂载 webserver 的情况下拿到 `connection.apiFetch`。渲染进程在 `dsh://app/` 加载现有 Web GUI，且 `nodeIntegration: false`、`contextIsolation: true`；profile 包含 `dsh-client-ui-renderer`，它提供的 `uiRenderer` 服务会在全部 client entry 激活后替换启动页。组合包钉住 [`directory-picker-native`](../../../../packages/host/directory-picker-native/README.md) 及其客户端表层；自适应选择器会注入 `webServer` 以采样绑定主机，因此只适用于 Web。
 
-`protocol.registerSchemesAsPrivileged` 在 `app.ready` 之前运行（`standard`、`secure`、`supportFetchAPI`、`corsEnabled`、`stream`）。`protocol.handle('dsh', …)` 把 `/api` 交给 `apiFetch`，把 `/plugins/<id>/client.js` 从 client-module 表读出，并把前端 dist 连同 `window.__DSH_BOOT__` 注入一起提供。渲染进程的 `location.origin` 为 `dsh://app`，因此 `AbstractApiClient.resolveBase()` 与 `fetch` 仍是同源。
+`protocol.registerSchemesAsPrivileged` 在 `app.ready` 之前运行（`standard`、`secure`、`supportFetchAPI`、`corsEnabled`、`stream`）。`protocol.handle('dsh', …)` 把 `/api` 交给 `apiFetch`，从 client-module 表读取 `/plugins/<id>/client.js`，并把前端 index 转换委托给 `clientModules.injectBootManifest()`。Web/Desktop 共用的转换会在 shell 模块运行前安装 `window.__ModuleLoader__` 队列 facade、由 HTML parser 阻塞加载的 modules 与 runtime 预加载项，以及 `window.__DSH_BOOT__`。渲染进程的 `location.origin` 为 `dsh://app`，因此 `AbstractApiClient.resolveBase()` 与 `fetch` 仍是同源。
 
 协议在调用 `apiFetch` 之前把每个 API 请求改写为 `http://127.0.0.1`（包括 Host 与 Origin），因为特权 RPC（`host.pickDirectory`、设置、凭据）要求回环。共享的 `apiFetch` 对 GET `/api/events.mux` 或 `/api/events.host` 不返回 426；这些 GET 保留 `toFetchHandler` 的 SSE 响应体。HTTP 426 与 WebSocket upgrade 仍只出现在 webserver 路由上。
 
@@ -22,7 +22,7 @@ Status: implemented
 
 ## Verification
 
-Connection 测试在 `dsh:` 上选择 `ElectronApiClient`，把 HTTP 426 留在 webserver 路由，并在没有 webServer 时暴露 `apiFetch`。模块测试在没有 HTTP 时组合启动图。desktop-app 测试钉住 dist 发布与 `app:desktop-surface` 提示词。协议测试改写到回环、提供 `/api`、`/plugins` 与 dist，并拒绝路径穿越。Host 测试钉住打包后的 `resources/agent-presets` 优先于 CLI 配置回退。`boot()` 会追加 AggregateError 的每一个成员，而不是只走 `.cause`。无密钥宿主冒烟会在构建之后启动随附的 desktop profile，并要求通过 `apiFetch` 完成 `host.describe` 与 `session.create`。`dsh desktop` 参数解析由 CLI args 套件覆盖；已构建 CLI 的配置转储钉住不含 webserver 的 desktop profile。
+Connection 测试在 `dsh:` 上选择 `ElectronApiClient`，把 HTTP 426 留在 webserver 路由，并在没有 webServer 时暴露 `apiFetch`。模块测试在没有 HTTP 时组合启动图，并钉住 facade、预加载项和启动图的顺序。desktop-app 测试钉住 dist 发布与 `app:desktop-surface` 提示词。协议测试改写到回环，提供 `/api`、`/plugins` 与转换后的 dist index，并拒绝路径穿越。Host 测试钉住打包后的 `resources/agent-presets` 优先于 CLI 配置回退。`boot()` 会追加 AggregateError 的每一个成员，而不是只走 `.cause`。无密钥宿主冒烟会在构建之后启动随附的 desktop profile，要求存在 `dsh-client-ui-renderer` 启动图行，通过 `apiFetch` 完成 `host.describe` 与 `session.create`，并验证桌面 index 携带共用的 module-loader facade、modules 预加载项和启动图。`dsh desktop` 参数解析由 CLI args 套件覆盖；已构建 CLI 的配置转储钉住不含 webserver 的 desktop profile。
 
 ## Alternatives considered
 

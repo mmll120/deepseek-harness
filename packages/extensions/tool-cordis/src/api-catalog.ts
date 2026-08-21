@@ -469,6 +469,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the graph served as `window.__DSH_BOOT__`.',
       },
       {
+        signature: 'injectBootManifest(html: string): string',
+        description: 'Install the module-loader facade, parser preloads, and current graph into an application index. HTTP and desktop carriers share this exact boot protocol.',
+        parameters: [{ name: 'html', description: 'application index source.' }],
+        returns: 'the transformed index.',
+      },
+      {
         signature: 'clientPath(id: string): string | undefined',
         description: 'Absolute path of an entry\'s client bundle.',
         parameters: [{ name: 'id', description: 'entry id (package name).' }],

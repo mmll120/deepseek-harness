@@ -25,7 +25,6 @@ import {
 import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { DSH_LAUNCH_ENVIRONMENT_KEY, type LaunchEnvironmentSnapshot } from '@deepseek-ai/dsh-launch-environment'
 import type { DesktopRuntimeValues } from '@deepseek-ai/dsh-desktop-app'
-import type { DesktopBootGraph } from './protocol.ts'
 import type {} from '@deepseek-ai/dsh-desktop-app'
 import type {} from '@deepseek-ai/cordis-plugin-timer'
 import type {} from '@deepseek-ai/cordis-plugin-hmr'
@@ -127,7 +126,8 @@ interface DesktopApiFetch {
 /** Client bundle table the protocol reads without importing the client package. */
 interface DesktopClientModules {
   clientPath(id: string): string | undefined
-  graph(): DesktopBootGraph
+  graph(): { entries: readonly { id: string }[] }
+  injectBootManifest(html: string): string
 }
 
 /** Connection handle slice the protocol and probe need. */

@@ -580,6 +580,14 @@ const SERVICE_ROLES: ServiceRole[] = [
     consumers: ['tool-cordis'],
     note: 'Registers host inspect providers, mirrors the client provider manifest, and routes client queries through the dynamic Cordis transport.',
   },
+  {
+    key: 'desktopRuntime',
+    pkg: 'desktop-app',
+    title: 'Electron desktop runtime values',
+    mode: 'core',
+    consumers: ['desktop'],
+    note: 'Publishes the built frontend dist location for the privileged dsh: protocol handler; the Electron main process resolves it instead of mounting an HTTP server.',
+  },
 ]
 
 function generatedHeader(title: string): string[] {

@@ -199,6 +199,8 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
       registerDownlink(HOST_EVENTS_PATH, (req, socket, head) => { downlinks.handleHost(req, socket, head) })
     })
   }
-  if (ctx.get('webServer') !== undefined) registerHttp(ctx)
-  else ctx.inject(['webServer'], registerHttp)
+  // Local inject: the HTTP routes wait on a webServer without making the
+  // plugin itself require one, so webServer-less carriers (the Electron dsh:
+  // protocol) load the connection service without HTTP routes.
+  ctx.inject(['webServer'], registerHttp)
 }

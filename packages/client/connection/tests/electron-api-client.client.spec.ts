@@ -30,7 +30,7 @@ describe('ElectronApiClient', () => {
         rpcId: body.rpcId,
         result: {
           ok: true,
-          value: { version: '0.0.0', cwd: '/', attachedSessions: 0, canOpenPath: true },
+          value: { version: '0.0.0', cwd: '/', attachedSessions: 0, home: '/', canOpenPath: true },
         },
       })
     }

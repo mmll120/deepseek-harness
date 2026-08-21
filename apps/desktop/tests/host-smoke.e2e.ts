@@ -44,9 +44,22 @@ describe.skipIf(!ready)('desktop host smoke', () => {
     try {
       expect((host.ctx as { get(name: string): unknown }).get('webServer')).toBeUndefined()
       expect(host.desktopRuntime.distIndex).toBe(DIST_INDEX)
+      expect(host.clientModules.graph().entries.some(entry => entry.id === '@deepseek-ai/dsh-client-ui-renderer')).toBe(true)
       const probe = await probeDesktopHost(host, workspace)
       expect(probe.ok, probe.error).toBe(true)
       expect(probe.sessionId).toEqual(expect.any(String))
+      const protocolDeps = {
+        apiFetch: host.connection.apiFetch,
+        clientPath: (id: string) => host.clientModules.clientPath(id),
+        injectBootManifest: (html: string) => host.clientModules.injectBootManifest(html),
+        distIndex: host.desktopRuntime.distIndex,
+        distRoot: host.desktopRuntime.distRoot,
+      }
+      const index = await handleDesktopProtocol(new Request('dsh://app/'), protocolDeps)
+      const html = await index.text()
+      expect(html).toContain('window.__ModuleLoader__=')
+      expect(html).toContain('<script src="/plugins/@deepseek-ai/dsh-client-modules/client.js?rev=')
+      expect(html).toContain('window.__DSH_BOOT__ = ')
       const described = await handleDesktopProtocol(new Request('dsh://app/api/host.describe', {
         method: 'POST',
         headers: { origin: 'dsh://app', 'content-type': 'application/json' },
@@ -56,13 +69,7 @@ describe.skipIf(!ready)('desktop host smoke', () => {
           method: 'host.describe',
           payload: {},
         }),
-      }), {
-        apiFetch: host.connection.apiFetch,
-        clientPath: id => host.clientModules.clientPath(id),
-        graph: () => host.clientModules.graph(),
-        distIndex: host.desktopRuntime.distIndex,
-        distRoot: host.desktopRuntime.distRoot,
-      })
+      }), protocolDeps)
       expect(described.status).toBe(200)
       const body = await described.json() as { result?: { ok: boolean } }
       expect(body.result?.ok).toBe(true)

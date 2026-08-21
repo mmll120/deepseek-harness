@@ -42,7 +42,7 @@ async function main(): Promise<void> {
   protocol.handle(DESKTOP_PROTOCOL_SCHEME, request => handleDesktopProtocol(request, {
     apiFetch: host.connection.apiFetch,
     clientPath: id => host.clientModules.clientPath(id),
-    graph: () => host.clientModules.graph(),
+    injectBootManifest: html => host.clientModules.injectBootManifest(html),
     distIndex: host.desktopRuntime.distIndex,
     distRoot: host.desktopRuntime.distRoot,
   }))

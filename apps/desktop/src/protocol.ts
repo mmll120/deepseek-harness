@@ -4,7 +4,7 @@
  * Rewrites renderer requests to `http://127.0.0.1` so the Connection trust
  * fence treats them as loopback (privileged RPCs refuse a `dsh://app` Host),
  * then serves `/api` through `connection.apiFetch`, `/plugins` from the
- * client-module table, and the frontend dist with boot-manifest injection.
+ * client-module table, and the frontend dist through its boot-protocol injector.
  * @module @deepseek-ai/dsh-desktop/protocol
  */
 
@@ -19,12 +19,6 @@ export const DESKTOP_PROTOCOL_HOST = 'app'
 
 /** Loopback origin used after rewrite so privileged RPCs pass the trust fence. */
 const LOOPBACK_ORIGIN = 'http://127.0.0.1'
-
-/** Boot graph served as `window.__DSH_BOOT__` (same fields the modules node half composes). */
-export interface DesktopBootGraph {
-  rev: string
-  entries: readonly unknown[]
-}
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -46,26 +40,16 @@ export interface DesktopProtocolDeps {
    * @returns the path, or undefined when the id is unknown.
    */
   clientPath: (id: string) => string | undefined
-  /** Current `__DSH_BOOT__` graph. */
-  graph: () => DesktopBootGraph
+  /**
+   * Install the client module-loader facade, parser preloads, and current graph.
+   * @param html - application index source.
+   * @returns the transformed index.
+   */
+  injectBootManifest: (html: string) => string
   /** Absolute path of index.html inside the dist root. */
   distIndex: string
   /** Absolute dist root directory. */
   distRoot: string
-}
-
-/**
- * Inject the boot entry graph into index.html as `window.__DSH_BOOT__`.
- * @param html - the index.html source.
- * @param graph - the composed entry graph.
- * @returns the html with the graph script injected.
- */
-export function injectDesktopBootManifest(html: string, graph: DesktopBootGraph): string {
-  const json = JSON.stringify(graph).replaceAll('<', '\\u003c')
-  const script = `<script>window.__DSH_BOOT__ = ${json}</script>`
-  const head = html.indexOf('<head>')
-  if (head !== -1) return `${html.slice(0, head + 6)}${script}${html.slice(head + 6)}`
-  return `${script}${html}`
 }
 
 /**
@@ -157,7 +141,7 @@ async function serveStatic(
     return new Response(null, { status: 403 })
   }
   const indexResponse = async (): Promise<Response> => {
-    const html = injectDesktopBootManifest(await readFile(distIndex, 'utf8'), deps.graph())
+    const html = deps.injectBootManifest(await readFile(distIndex, 'utf8'))
     return new Response(method === 'HEAD' ? null : html, {
       status: 200,
       headers: { 'content-type': MIME['.html'] ?? 'text/html; charset=utf-8' },

@@ -357,7 +357,7 @@ export class ClientModuleRegistry extends Service {
         'client-modules: bundle route',
       )
       webCtx.effect(
-        () => webCtx.webServer.tapIndex(html => injectBootManifest(html, this.composed)),
+        () => webCtx.webServer.tapIndex(html => this.injectBootManifest(html)),
         'client-modules: boot manifest injection',
       )
     }
@@ -371,6 +371,16 @@ export class ClientModuleRegistry extends Service {
    */
   graph(): WebBootGraph {
     return this.composed
+  }
+
+  /**
+   * Install the module-loader facade, parser preloads, and current graph into
+   * an application index. HTTP and desktop carriers share this exact boot protocol.
+   * @param html - application index source.
+   * @returns the transformed index.
+   */
+  injectBootManifest(html: string): string {
+    return injectBootManifest(html, this.composed)
   }
 
   /**

@@ -2,7 +2,7 @@
 
 [English](desktop.md) | 中文
 
-桌面应用与[Web UI](./index.md)是同一套 DeepSeek Harness GUI，打包成本地 Electron 窗口。它不监听 TCP 端口。会话数据、设置和凭据仍写在 `$DSH_HOME`（默认 `~/.dsh`），与 `dsh web` 共用。
+桌面应用与[Web UI](./index.zh.md)是同一套 DeepSeek Harness GUI，打包成本地 Electron 窗口。它不监听 TCP 端口。会话数据、设置和凭据仍写在 `$DSH_HOME`（默认 `~/.dsh`），与 `dsh web` 共用。
 
 ## 启动
 
@@ -24,6 +24,6 @@ Windows 安装包（NSIS 与 portable）在 `pnpm run build` 之后通过 `pnpm 
 
 ## 继续使用
 
-- [使用 Web UI](./index.md)
-- [配置模型](./providers.md)
-- [使用其他 CLI 模式](../../../apps/cli/README.md)
+- [使用 Web UI](./index.zh.md)
+- [配置模型](./providers.zh.md)
+- [使用其他 CLI 模式](../../../apps/cli/README.zh.md)

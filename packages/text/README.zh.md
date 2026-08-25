@@ -6,4 +6,4 @@
 
 | 包 | 职责 | ctx 键 |
 |---|---|---|
-| [`tool-text/`](tool-text/README.md) | 纯文本测量（`text_stats`）。 | （注册于 `ctx.tools`） |
+| [`tool-text/`](tool-text/README.zh.md) | 纯文本测量（`text_stats`）。 | （注册于 `ctx.tools`） |

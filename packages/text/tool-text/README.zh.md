@@ -18,7 +18,7 @@
 
 ## 导出形态
 
-函数/命名空间插件：导出 `name` / `inject` / `apply`，没有默认导出。多余的 `export default` 会让 Loader 的 `unwrapExports` 折叠模块并丢掉 `inject`（见 [docs/postmortem/0001](../../../docs/postmortem/0001-acp-default-export-drops-inject.md)）。
+函数/命名空间插件：导出 `name` / `inject` / `apply`，没有默认导出。多余的 `export default` 会让 Loader 的 `unwrapExports` 折叠模块并丢掉 `inject`（见 [docs/postmortem/0001](../../../docs/postmortem/0001-acp-default-export-drops-inject.zh.md)）。
 
 ## 渲染
 
@@ -30,7 +30,7 @@
 
 #### 模型看到什么
 
-模型看到生成的 [`text_stats` schema](../../../docs/tool-catalog.md#deepseek-aidsh-tool-text)。
+模型看到生成的 [`text_stats` schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-text)。
 
 #### Token 影响
 

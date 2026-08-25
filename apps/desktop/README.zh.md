@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-DeepSeek Harness 的 Electron 桌面应用。主进程启动 `desktop` profile（`dsh-base` + [`dsh-desktop-app`](../../packages/bundle/desktop-app/README.md)），并通过特权 `dsh:` 协议提供现有 Web GUI。进程不监听 HTTP 端口，也不挂载 [`dsh-host-webserver`](../../packages/host/webserver/README.md)。
+DeepSeek Harness 的 Electron 桌面应用。主进程启动 `desktop` profile（`dsh-base` + [`dsh-desktop-app`](../../packages/bundle/desktop-app/README.zh.md)），并通过特权 `dsh:` 协议提供现有 Web GUI。进程不监听 HTTP 端口，也不挂载 [`dsh-host-webserver`](../../packages/host/webserver/README.zh.md)。
 
 在已构建的 checkout 上用 `pnpm --filter @deepseek-ai/dsh-desktop start` 启动，或在 `pnpm run build` 之后运行 `dsh desktop`。`--smoke` 会探测 `host.describe` 与 `session.create` 然后退出。会话数据仍写在 `$DSH_HOME`（默认 `~/.dsh`），与 `dsh web` 共用。
 

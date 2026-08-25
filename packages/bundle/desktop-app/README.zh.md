@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-dsh 桌面表层组合包。[`cordis.patch.yml`](cordis.patch.yml) 叠加在 [`dsh-base`](../base/README.md) 之上：设置 coding persona，插入宿主行（API 网关、workspace、投影缓存、存储、原生目录选择器）以及与 [`dsh-web-app`](../web-app/README.md) 相同的浏览器插件名录外加原生 directory-flow 占用者，并挂载本包的 `desktop-runtime` 粘合插件（配置为 `{surfaceContext}`）。该插件通过 `@deepseek-ai/dsh-web-frontend` 的 exports 解析已构建的前端 dist，将其作为 `desktopRuntime` 提供给 Electron `dsh:` 协议处理器，并在 `surfaceContext` 为 true 时注册 Harness 源码与桌面表层提示词段落。它不挂载 webserver、不打印 URL，也不发布 `DSH_WEB_URL`。自适应目录选择器会注入 `webServer`，因此本组合包不挂载它。不在 `dsh-base` 中的随附 agent-preset 插件（`dsh-persona`、`dsh-tool-ask-user`、`dsh-tool-cordis`、`dsh-agent-tool-presentation`）在此声明，以便 `healProfilesModuleFallback` 能从本应用的依赖图解析它们。[`apps/desktop`](../../../apps/desktop/README.md) 中的 Electron 应用启动该 profile，并通过该协议提供 RPC 与客户端 bundle。
+dsh 桌面表层组合包。[`cordis.patch.yml`](cordis.patch.yml) 叠加在 [`dsh-base`](../base/README.zh.md) 之上：设置 coding persona，插入宿主行（API 网关、workspace、投影缓存、存储、原生目录选择器）以及与 [`dsh-web-app`](../web-app/README.zh.md) 相同的浏览器插件名录外加原生 directory-flow 占用者，并挂载本包的 `desktop-runtime` 粘合插件（配置为 `{surfaceContext}`）。该插件通过 `@deepseek-ai/dsh-web-frontend` 的 exports 解析已构建的前端 dist，将其作为 `desktopRuntime` 提供给 Electron `dsh:` 协议处理器，并在 `surfaceContext` 为 true 时注册 Harness 源码与桌面表层提示词段落。它不挂载 webserver、不打印 URL，也不发布 `DSH_WEB_URL`。自适应目录选择器会注入 `webServer`，因此本组合包不挂载它。不在 `dsh-base` 中的随附 agent-preset 插件（`dsh-persona`、`dsh-tool-ask-user`、`dsh-tool-cordis`、`dsh-agent-tool-presentation`）在此声明，以便 `healProfilesModuleFallback` 能从本应用的依赖图解析它们。[`apps/desktop`](../../../apps/desktop/README.zh.md) 中的 Electron 应用启动该 profile，并通过该协议提供 RPC 与客户端 bundle。
 
 ## 模型体验
 

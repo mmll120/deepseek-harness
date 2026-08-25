@@ -6,11 +6,11 @@ Status: implemented
 
 ## Problem
 
-产品已经提供本地 Host 加浏览器 GUI（`dsh web`）。若桌面应用只是把该 HTTP 服务器套进 Electron 窗口，就会多出一个监听端口、一条 LAN URL，以及 Electron 并不需要的信任栅栏，并且违背「Electron 不复用 [`dsh-host-webserver`](../../../../packages/host/webserver/README.md)」这条已落地约束。为第二套 UI 家族重写 `packages/client/ui-*` 则会按应用拆分 Host/Client 能力包。
+产品已经提供本地 Host 加浏览器 GUI（`dsh web`）。若桌面应用只是把该 HTTP 服务器套进 Electron 窗口，就会多出一个监听端口、一条 LAN URL，以及 Electron 并不需要的信任栅栏，并且违背「Electron 不复用 [`dsh-host-webserver`](../../../../packages/host/webserver/README.zh.md)」这条已落地约束。为第二套 UI 家族重写 `packages/client/ui-*` 则会按应用拆分 Host/Client 能力包。
 
 ## Decision
 
-桌面应用是与 Web、headless 并列的第三种应用组装：[`apps/desktop`](../../../../apps/desktop/README.md) 加上 [`dsh-desktop-app`](../../../../packages/bundle/desktop-app/README.md)。主进程启动 `desktop` profile（`dsh-base` + `dsh-desktop-app`），在不挂载 webserver 的情况下拿到 `connection.apiFetch`。渲染进程在 `dsh://app/` 加载现有 Web GUI，且 `nodeIntegration: false`、`contextIsolation: true`。组合包钉住 [`directory-picker-native`](../../../../packages/host/directory-picker-native/README.md) 及其客户端表层；自适应选择器会注入 `webServer` 以采样绑定主机，因此只适用于 Web。
+桌面应用是与 Web、headless 并列的第三种应用组装：[`apps/desktop`](../../../../apps/desktop/README.zh.md) 加上 [`dsh-desktop-app`](../../../../packages/bundle/desktop-app/README.zh.md)。主进程启动 `desktop` profile（`dsh-base` + `dsh-desktop-app`），在不挂载 webserver 的情况下拿到 `connection.apiFetch`。渲染进程在 `dsh://app/` 加载现有 Web GUI，且 `nodeIntegration: false`、`contextIsolation: true`。组合包钉住 [`directory-picker-native`](../../../../packages/host/directory-picker-native/README.zh.md) 及其客户端表层；自适应选择器会注入 `webServer` 以采样绑定主机，因此只适用于 Web。
 
 `protocol.registerSchemesAsPrivileged` 在 `app.ready` 之前运行（`standard`、`secure`、`supportFetchAPI`、`corsEnabled`、`stream`）。`protocol.handle('dsh', …)` 把 `/api` 交给 `apiFetch`，把 `/plugins/<id>/client.js` 从 client-module 表读出，并把前端 dist 连同 `window.__DSH_BOOT__` 注入一起提供。渲染进程的 `location.origin` 为 `dsh://app`，因此 `AbstractApiClient.resolveBase()` 与 `fetch` 仍是同源。
 
@@ -18,7 +18,7 @@ Status: implemented
 
 `ElectronApiClient` 继承 `AbstractApiClient`，只通过 `globalThis.fetch` 实现 `doFetch`。connection 浏览器插件在 `location.protocol === 'dsh:'` 时选择它，并把该 origin 视为 loopback，以便原生打开路径的 UI 可用。`dsh desktop` 会拉起 Electron；`dsh --profile desktop --dump-config` 仍只转储配置树，不打开窗口。
 
-用户数据仍在 `$DSH_HOME`。electron-builder 首先面向 Windows NSIS 与 portable，并把应用目录打成未打包布局（`asar: false`），这样 `$DSH_HOME/profiles/node_modules` 上的 Windows 目录联接和原生 addon 都能指向真实目录。打包时 extraResources 把 `apps/cli/config/agent-presets` 复制到 `resources/agent-presets`；源码启动仍使用该 CLI 路径，因此桌面应用不依赖 `@deepseek-ai/dsh`。`app.ready` 之后的启动失败会调用 `dialog.showErrorBox`，因为 GUI 子系统 exe 没有控制台（`--smoke` 不弹框）。配置文件 HMR 属于开发工作流：即使 Loader internals 仍可通过随包分发的 `node-addon-require-builtin` 访问，主进程在 `app.isPackaged` 时也会显式关闭它；patch 文件仍在启动时应用。桌面应用依赖 `cordis-plugin-group`、`dsh-invariants`、`dsh-system-prompt`，以及 Host 会 import 的 Service Definition peer，因为 electron-builder 会省略仅 peer 的包，而 `boot()` 会导入 group 内置插件。本笔记负责桌面组装、特权协议载体，以及不复用 webserver 的决定。[GUI 分层与 RPC 协议](2026-07-19-gui-layering-and-rpc-protocol.md) 负责 fetch 子类表和 Host/Client 划分。
+用户数据仍在 `$DSH_HOME`。electron-builder 首先面向 Windows NSIS 与 portable，并把应用目录打成未打包布局（`asar: false`），这样 `$DSH_HOME/profiles/node_modules` 上的 Windows 目录联接和原生 addon 都能指向真实目录。打包时 extraResources 把 `apps/cli/config/agent-presets` 复制到 `resources/agent-presets`；源码启动仍使用该 CLI 路径，因此桌面应用不依赖 `@deepseek-ai/dsh`。`app.ready` 之后的启动失败会调用 `dialog.showErrorBox`，因为 GUI 子系统 exe 没有控制台（`--smoke` 不弹框）。配置文件 HMR 属于开发工作流：即使 Loader internals 仍可通过随包分发的 `node-addon-require-builtin` 访问，主进程在 `app.isPackaged` 时也会显式关闭它；patch 文件仍在启动时应用。桌面应用依赖 `cordis-plugin-group`、`dsh-invariants`、`dsh-system-prompt`，以及 Host 会 import 的 Service Definition peer，因为 electron-builder 会省略仅 peer 的包，而 `boot()` 会导入 group 内置插件。本笔记负责桌面组装、特权协议载体，以及不复用 webserver 的决定。[GUI 分层与 RPC 协议](2026-07-19-gui-layering-and-rpc-protocol.zh.md) 负责 fetch 子类表和 Host/Client 划分。
 
 ## Verification
 

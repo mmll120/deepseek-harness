@@ -678,6 +678,23 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'desktopRuntime',
+    summary: 'Dist location published for the Electron custom-protocol handler.',
+    description: 'Dist location published for the Electron custom-protocol handler.',
+    methods: [
+      {
+        signature: 'distIndex: string',
+        description: 'Absolute path of index.html inside the dist root.',
+        parameters: [],
+      },
+      {
+        signature: 'distRoot: string',
+        description: 'Absolute dist root directory (parent of distIndex).',
+        parameters: [],
+      },
+    ],
+  },
+  {
     key: 'directoryPicker',
     summary: 'Abstract directory-picking service.',
     description: 'Abstract directory-picking service. Subclass, implement `capability()`, and load the subclass as a plugin — it registers as `ctx.directoryPicker` (one implementation per context; loading a second throws, cordis\' standard duplicate-service behavior). The capability object must be stable for the service lifetime: consumers may capture it across calls.',

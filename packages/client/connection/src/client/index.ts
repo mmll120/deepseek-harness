@@ -6,6 +6,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type { HostDescription, IApiClient } from './api.ts'
 import { ConnectionController, type ConnectionConfig, type ConnectionSinks, type ConnectionState } from './connection.ts'
+import { ElectronApiClient } from './electron-api-client.ts'
 import { FixtureApiClient } from './fixture.ts'
 import { WebApiClient } from './web-api-client.ts'
 import { createWebConnectionRpc, type RpcFetch } from './rpc.ts'
@@ -110,8 +111,10 @@ export function apply(ctx: Context): void {
   const pageLocation = typeof location === 'undefined' ? undefined : location
   const fixture = pageLocation !== undefined && new URLSearchParams(pageLocation.search).has('fixture')
   const fixtureClient = fixture ? new FixtureApiClient() : undefined
+  const desktop = pageLocation?.protocol === 'dsh:'
   const transport = (globalThis as ClientTransportGlobal).__DSH_TRANSPORT__
-  const api: IApiClient = fixtureClient ?? transport?.createApiClient() ?? new WebApiClient()
+  const api: IApiClient = fixtureClient
+    ?? (desktop ? new ElectronApiClient() : transport?.createApiClient() ?? new WebApiClient())
   const rpc = fixtureClient?.rpc ?? createWebConnectionRpc(transport?.fetch)
   let started = false
   let description: HostDescription | undefined
@@ -129,7 +132,9 @@ export function apply(ctx: Context): void {
   }
   const handle: ConnectionHandle = {
     api,
-    isLoopback: pageLocation === undefined || isLoopbackHostname(pageLocation.hostname),
+    isLoopback: pageLocation === undefined
+      || pageLocation.protocol === 'dsh:'
+      || isLoopbackHostname(pageLocation.hostname),
     hostDescription: {
       getSnapshot: () => description,
       subscribe: (listener) => {

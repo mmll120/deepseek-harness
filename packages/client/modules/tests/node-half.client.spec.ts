@@ -246,6 +246,25 @@ describe('client bundle activation', () => {
   })
 })
 
+describe('client bundle activation without HTTP', () => {
+  it('composes the graph when no webServer is present', () => {
+    const currentName = '@fixture/desktop-no-http'
+    const clientPath = writePackage(currentName)
+    mkdirSync(dirname(clientPath), { recursive: true })
+    writeFileSync(clientPath, 'window.__ModuleLoader__.load({id:"x",factory(){}})\n')
+    const ctx = new Context()
+    ctx.baseUrl = pathToFileURL(root!).href + '/'
+    ctx.provide('loader', {
+      *entries() {
+        yield { options: { name: currentName }, fiber: {}, disabled: false }
+      },
+    })
+    const service = new ClientModuleRegistry(ctx)
+    expect(service.graph().entries).toHaveLength(1)
+    expect(service.clientPath(currentName)).toBe(clientPath)
+  })
+})
+
 describe('shared module declarations', () => {
   it('accepts external requests and carries them onto the graph row', () => {
     const packageName = '@fixture/shared-declared'

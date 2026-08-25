@@ -50,9 +50,18 @@ allowBuilds:
   node-addon-require-builtin: false
   # JSONL durability calls MoveFileExW with write-through publication on Windows.
   koffi: true
+  # Electron downloads its Chromium binary at install time.
+  electron: true
+  # electron-builder unpacks helper binaries during install.
+  electron-builder: true
+  '@electron/rebuild': true
+  electron-winstaller: true
+  app-builder-bin: true
+  7zip-bin: true
   # The Python runtime deploy includes the reviewed workspace postinstall that
   # restores the executable bit on node-pty's macOS spawn helper.
   '@deepseek-ai/dsh-subprocess-local@file:packages/subprocess/subprocess-local': true
+  node-pty@1:2:0-beta:15(patch_hash=b40ae545608897914bd25fb009c97eeac478c34e8a910298ddcb01b746534bb0): set this to true or false
 
 minimumReleaseAgeExclude:
   # Fresh pi-ai releases carry the model catalog updates that are the whole

@@ -280,7 +280,7 @@ window.__ModuleLoader__={
  * boot activation audit reports it).
  */
 export class ClientModuleRegistry extends Service {
-  static inject = ['webServer', 'loader']
+  static inject = ['loader']
 
   private readonly table = new Map<string, WebPluginRecord>()
   // Negative verdicts (unresolvable specifier — builtins like cordis:include,
@@ -296,7 +296,9 @@ export class ClientModuleRegistry extends Service {
 
   /**
    * Build the service: subscribe, seed, and run the activation flush.
-   * @param ctx - plugin context carrying webServer and loader.
+   * HTTP bundle routes register when a webServer is present; the desktop
+   * host reads {@link graph} and {@link clientPath} without one.
+   * @param ctx - plugin context carrying loader, and webServer when the HTTP carrier is mounted.
    */
   constructor(ctx: Context) {
     super(ctx, 'clientModules')
@@ -336,13 +338,17 @@ export class ClientModuleRegistry extends Service {
       throw new ClientPackageCompositionError(failures)
     }
 
-    ctx.effect(
-      () => ctx.webServer.register({ kind: 'prefix', path: '/plugins', handler: this.serveBundle }),
-      'client-modules: bundle route',
-    )
-    ctx.on('webserver/index-inject', (table) => {
-      table.push(...bootInjections(this.composed))
-    })
+    const registerHttp = (webCtx: Context): void => {
+      webCtx.effect(
+        () => webCtx.webServer.register({ kind: 'prefix', path: '/plugins', handler: this.serveBundle }),
+        'client-modules: bundle route',
+      )
+      webCtx.on('webserver/index-inject', (table) => {
+        table.push(...bootInjections(this.composed))
+      })
+    }
+    if (ctx.get('webServer') !== undefined) registerHttp(ctx)
+    else ctx.inject(['webServer'], registerHttp)
   }
 
   /**

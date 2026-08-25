@@ -28,6 +28,10 @@ const invocation = parseDshArgs(process.argv.slice(2), readVersion())
 
 switch (invocation.mode) {
   case 'profile': {
+    if (invocation.profile === 'desktop') {
+      const { runDesktop } = await import('./desktop.ts')
+      process.exit(await runDesktop(invocation.args))
+    }
     const { runProfile } = await import('./profile-boot.ts')
     await runProfile({
       environment: loadLayeredEnv('dsh'),

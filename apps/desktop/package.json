@@ -1,0 +1,95 @@
+{
+  "name": "@deepseek-ai/dsh-desktop",
+  "description": "DeepSeek Harness desktop application: Electron main process over the desktop profile, privileged dsh: protocol, zero HTTP ports",
+  "version": "0.1.0-rc.8",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "apps/desktop"
+  },
+  "type": "module",
+  "main": "lib/main.js",
+  "files": [
+    "lib/*.js"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "start": "electron --import tsx/esm src/main.ts",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "dependencies": {
+    "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/cordis-plugin-group": "workspace:^",
+    "@deepseek-ai/cordis-plugin-hmr": "workspace:^",
+    "@deepseek-ai/cordis-plugin-include": "workspace:^",
+    "@deepseek-ai/cordis-plugin-loader": "workspace:^",
+    "@deepseek-ai/cordis-plugin-timer": "workspace:^",
+    "@deepseek-ai/dsh-anonymous-user-id": "workspace:^",
+    "@deepseek-ai/dsh-app-boot": "workspace:^",
+    "@deepseek-ai/dsh-atomic-write": "workspace:^",
+    "@deepseek-ai/dsh-base": "workspace:^",
+    "@deepseek-ai/dsh-bash-local": "workspace:^",
+    "@deepseek-ai/dsh-code-runtime": "workspace:^",
+    "@deepseek-ai/dsh-compaction": "workspace:^",
+    "@deepseek-ai/dsh-desktop-app": "workspace:^",
+    "@deepseek-ai/dsh-fs": "workspace:^",
+    "@deepseek-ai/dsh-home-paths": "workspace:^",
+    "@deepseek-ai/dsh-invariants": "workspace:^",
+    "@deepseek-ai/dsh-launch-environment": "workspace:^",
+    "@deepseek-ai/dsh-output-retention": "workspace:^",
+    "@deepseek-ai/dsh-pwsh-local": "workspace:^",
+    "@deepseek-ai/dsh-sandbox": "workspace:^",
+    "@deepseek-ai/dsh-scope": "workspace:^",
+    "@deepseek-ai/dsh-session-telemetry": "workspace:^",
+    "@deepseek-ai/dsh-session-title-llm": "workspace:^",
+    "@deepseek-ai/dsh-shell": "workspace:^",
+    "@deepseek-ai/dsh-spill": "workspace:^",
+    "@deepseek-ai/dsh-subagent-in-process-driver": "workspace:^",
+    "@deepseek-ai/dsh-subprocess": "workspace:^",
+    "@deepseek-ai/dsh-system-prompt": "workspace:^",
+    "@deepseek-ai/dsh-timeout": "workspace:^",
+    "@deepseek-ai/dsh-workflow": "workspace:^",
+    "node-addon-require-builtin": "^0.1.4"
+  },
+  "devDependencies": {
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12",
+    "tsx": "^4.22.4"
+  },
+  "build": {
+    "appId": "ai.deepseek.harness",
+    "productName": "DeepSeek Harness",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "lib/**/*",
+      "package.json"
+    ],
+    "asar": false,
+    "extraResources": [
+      {
+        "from": "../cli/config/agent-presets",
+        "to": "agent-presets"
+      }
+    ],
+    "nodeGypRebuild": false,
+    "npmRebuild": false,
+    "extraMetadata": {
+      "main": "lib/main.js"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
+  collectInstallFallbackLinks,
   composeEntries,
   healProfilesModuleFallback,
   initProfile,
@@ -152,6 +153,7 @@ describe('loadProfile', () => {
     // cannot be asserted to fail here: the source-plane test runner resolves
     // @deepseek-ai/* through tsconfig paths regardless of the staged anchor.
     expect(PROFILE_TEMPLATES.web).toContain('@deepseek-ai/dsh-base')
+    expect(PROFILE_TEMPLATES.desktop).toEqual(['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-desktop-app'])
     try {
       loadProfile('t', 'web', anchor, home)
     } catch {
@@ -268,5 +270,30 @@ describe('healProfilesModuleFallback', () => {
     healProfilesModuleFallback(anchor, home) // second healer sees the correct link
     const fallback = join(home, 'profiles', 'node_modules')
     expect(lstatSync(join(fallback, 'dsh-app')).isSymbolicLink()).toBe(true)
+  })
+})
+
+describe('collectInstallFallbackLinks', () => {
+  it('omits peer-only packages when includePeers is false', () => {
+    const root = tmp()
+    const appDir = join(root, 'app')
+    mkdirSync(join(appDir, 'node_modules', 'impl'), { recursive: true })
+    mkdirSync(join(appDir, 'node_modules', 'peer-svc'), { recursive: true })
+    writeFileSync(join(appDir, 'node_modules', 'impl', 'package.json'), JSON.stringify({
+      name: 'impl',
+      version: '0.0.0',
+      peerDependencies: { 'peer-svc': '0.0.0' },
+    }))
+    writeFileSync(join(appDir, 'node_modules', 'peer-svc', 'package.json'), JSON.stringify({
+      name: 'peer-svc',
+      version: '0.0.0',
+    }))
+    writeFileSync(join(appDir, 'package.json'), JSON.stringify({
+      name: 'dsh-app',
+      dependencies: { impl: '0.0.0' },
+    }))
+    const anchor = join(appDir, 'package.json')
+    expect(collectInstallFallbackLinks(anchor).has('peer-svc')).toBe(true)
+    expect(collectInstallFallbackLinks(anchor, { includePeers: false }).has('peer-svc')).toBe(false)
   })
 })

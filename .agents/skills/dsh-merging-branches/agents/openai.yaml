@@ -1,0 +1,4 @@
+interface:
+  display_name: "DSH Merging Branches"
+  short_description: "Merge a branch into the current branch with the repository-owned conflict pipeline"
+  default_prompt: "Use $dsh-merging-branches to merge a branch and resolve conflicts on this DeepSeek Harness checkout."

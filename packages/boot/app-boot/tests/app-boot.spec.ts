@@ -760,6 +760,14 @@ describe('boot', () => {
     ].join('')))
   })
 
+  it('appends every AggregateError member when several entries fail together', async () => {
+    const dir = tmp()
+    writeFileSync(join(dir, 'a.mjs'), "export function apply() { throw new Error('fail-a') }\n")
+    writeFileSync(join(dir, 'b.mjs'), "export function apply() { throw new Error('fail-b') }\n")
+    writeFileSync(join(dir, 'cordis.yml'), '- id: a\n  name: ./a.mjs\n- id: b\n  name: ./b.mjs\n')
+    await expect(boot(NAME, join(dir, 'cordis.yml'))).rejects.toThrow(/fail-a[\s\S]*fail-b/)
+  })
+
   it('falls back to the deepest cause message when its stack was erased', async () => {
     const dir = tmp()
     const deepest = new Error('stackless deep failure')

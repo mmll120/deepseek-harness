@@ -87,6 +87,7 @@
     "verify-translation-prompt": "tsx scripts/verify-translation-prompt.ts",
     "verify-translation-pairing": "tsx scripts/verify-translation-pairing.ts",
     "resolve-translation-pairing-conflicts": "tsx scripts/merge-translation-pairing.ts --resolve",
+    "merge-conflict-summary": "tsx scripts/merge-conflict-summary.ts",
     "gen-translation-brief": "tsx scripts/gen-translation-brief.ts",
     "verify-doc-budgets": "tsx scripts/verify-doc-budgets.ts",
     "docs:dev": "pnpm --filter @deepseek-ai/website run dev",

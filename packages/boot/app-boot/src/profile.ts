@@ -65,8 +65,19 @@ export interface DshManifestSection {
 export interface ProfileManifest {
   name?: string
   dependencies?: Record<string, string>
+  optionalDependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
   dsh?: DshManifestSection
+}
+
+/** Options for {@link collectInstallFallbackLinks}. */
+export interface CollectInstallFallbackOptions {
+  /**
+   * When true, BFS also walks `peerDependencies` (Loader fallback and out-of-tree
+   * plugins). When false, only `dependencies` and `optionalDependencies` — the
+   * tree electron-builder packs.
+   */
+  includePeers?: boolean
 }
 
 /** One resolved bundle layer of a profile. */
@@ -114,6 +125,7 @@ export function resolveProfileDir(name: string, home: string = resolveDshHome())
 export const PROFILE_TEMPLATES: Record<string, readonly string[]> = {
   web: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'],
   headless: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-headless'],
+  desktop: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-desktop-app'],
 }
 
 /** Installation-owned bundle tuples normalized to the shipped template. */
@@ -202,6 +214,47 @@ function ensureSymlink(link: string, target: string): void {
 }
 
 /**
+ * Resolve every package directory the installation fallback would link.
+ * @param installAnchor - absolute path of the dsh app's package.json.
+ * @param options - whether to walk peerDependencies.
+ * @returns package name to absolute directory; first resolution wins.
+ */
+export function collectInstallFallbackLinks(
+  installAnchor: string,
+  options: CollectInstallFallbackOptions = {},
+): Map<string, string> {
+  const includePeers = options.includePeers !== false
+  const appManifest = JSON.parse(readFileSync(installAnchor, 'utf8')) as ProfileManifest
+  const links = new Map<string, string>()
+  /* v8 ignore next -- a real app manifest always declares its name */
+  if (appManifest.name !== undefined) links.set(appManifest.name, dirname(installAnchor))
+  const queue: { anchor: string; manifest: ProfileManifest }[] = [{ anchor: installAnchor, manifest: appManifest }]
+  for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
+    // Peer dependencies participate when includePeers is true: Service
+    // Definition packages (dsh-subprocess, dsh-compaction, ...) are peers of
+    // their implementations, never plain dependencies, yet out-of-tree plugins
+    // import them directly.
+    const names = [
+      ...Object.keys(next.manifest.dependencies ?? {}),
+      ...Object.keys(next.manifest.optionalDependencies ?? {}),
+      ...includePeers ? Object.keys(next.manifest.peerDependencies ?? {}) : [],
+    ]
+    /* v8 ignore next -- a real app manifest always declares dependencies */
+    for (const dep of names) {
+      if (links.has(dep)) continue
+      const dir = packageDirFromAnchor(next.anchor, dep)
+      // A declared-but-uninstalled dependency cannot be a loader-visible
+      // plugin; skip it rather than fail the whole boot.
+      if (dir === undefined) continue
+      links.set(dep, dir)
+      const manifestPath = join(dir, 'package.json')
+      queue.push({ anchor: manifestPath, manifest: JSON.parse(readFileSync(manifestPath, 'utf8')) as ProfileManifest })
+    }
+  }
+  return links
+}
+
+/**
  * Maintain the flat module fallback `$DSH_HOME/profiles/node_modules`: one
  * symlink per package in the dsh app's resolvable dependency CLOSURE (BFS
  * over `dependencies` from the app manifest), each resolved from its own
@@ -224,29 +277,7 @@ export function healProfilesModuleFallback(installAnchor: string, home: string =
   const profilesDir = join(home, PROFILES_DIR)
   const modulesDir = join(profilesDir, 'node_modules')
   mkdirSync(modulesDir, { recursive: true })
-  const appManifest = JSON.parse(readFileSync(installAnchor, 'utf8')) as ProfileManifest
-  const links = new Map<string, string>()
-  /* v8 ignore next -- a real app manifest always declares its name */
-  if (appManifest.name !== undefined) links.set(appManifest.name, dirname(installAnchor))
-  // BFS over the resolvable dependency graph; the visited set is the link
-  // map itself (first resolution wins, matching Node's own nearest-wins).
-  const queue: { anchor: string; manifest: ProfileManifest }[] = [{ anchor: installAnchor, manifest: appManifest }]
-  for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
-    // Peer dependencies participate: Service Definition packages (dsh-subprocess,
-    // dsh-compaction, ...) are peers of their implementations, never plain
-    // dependencies, yet out-of-tree plugins import them directly.
-    /* v8 ignore next -- a real app manifest always declares dependencies */
-    for (const dep of [...Object.keys(next.manifest.dependencies ?? {}), ...Object.keys(next.manifest.peerDependencies ?? {})]) {
-      if (links.has(dep)) continue
-      const dir = packageDirFromAnchor(next.anchor, dep)
-      // A declared-but-uninstalled dependency cannot be a loader-visible
-      // plugin; skip it rather than fail the whole boot.
-      if (dir === undefined) continue
-      links.set(dep, dir)
-      const manifestPath = join(dir, 'package.json')
-      queue.push({ anchor: manifestPath, manifest: JSON.parse(readFileSync(manifestPath, 'utf8')) as ProfileManifest })
-    }
-  }
+  const links = collectInstallFallbackLinks(installAnchor)
   for (const [packageName, target] of links) {
     const link = join(modulesDir, packageName)
     mkdirSync(dirname(link), { recursive: true })
